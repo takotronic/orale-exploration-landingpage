@@ -76,6 +76,59 @@
         .sources-list li {
             margin-bottom: 0.5rem;
         }
+        /* Quiz-spezifisches Styling */
+        .answer-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+        .answer-label:hover {
+            background-color: #f7fafc;
+        }
+        input[type="radio"]:checked + .answer-label {
+            background-color: #e2e8f0;
+        }
+        .feedback {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+        }
+        .correct {
+            background-color: #d1fae5;
+            color: #10b981;
+        }
+        .incorrect {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        /* Animation für das Quiz-Ende */
+        .quiz-finished {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .quiz-finished.show {
+            display: flex;
+        }
+        .stars {
+            font-size: 3rem;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
     </style>
 </head>
 <body>
@@ -158,12 +211,32 @@
         </div>
     </div>
 
-    <!-- Quiz Section -->
+    <!-- Interactive Quiz Section -->
     <div class="content-section flex flex-col items-center text-center">
         <h2 class="section-title">Testen Sie Ihr Wissen mit einem Quiz!</h2>
-        <a href="https://notebooklm.google.com/notebook/1028d905-5e8a-46aa-9b78-0e1f0ccb6748?artifactId=586b13f7-646d-42e2-b7f0-9d9db8a2ef23" target="_blank" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-600 transition-colors duration-300">
-            Zum Quiz
-        </a>
+        <div id="quiz-container" class="w-full max-w-lg mx-auto">
+            <!-- Quizfrage und Antworten -->
+            <div id="question-container" class="text-left">
+                <!-- Frage wird hier dynamisch eingefügt -->
+            </div>
+            <div id="feedback-container">
+                <!-- Feedback und Erklärung werden hier eingefügt -->
+            </div>
+            <button id="submit-quiz-btn" class="mt-8 bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-600 transition-colors duration-300">
+                Antwort überprüfen
+            </button>
+            <button id="next-question-btn" class="mt-8 bg-gray-400 text-white font-bold py-3 px-6 rounded-lg shadow-lg hidden">
+                Nächste Frage
+            </button>
+        </div>
+        
+        <!-- Bereich für das Quiz-Ende und Animation -->
+        <div id="quiz-end" class="quiz-finished">
+            <div class="stars">✨</div>
+            <h3 class="text-2xl font-bold mt-4">Herzlichen Glückwunsch!</h3>
+            <p id="score" class="text-xl mt-2"></p>
+            <p id="ranking" class="mt-2 text-lg font-semibold"></p>
+        </div>
     </div>
 
     <!-- Sources Section -->
@@ -183,6 +256,245 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const allQuestions = [
+            {
+                question: "Was ist ein wichtiger Grund für das orale Explorieren im Babyalter?",
+                answers: {
+                    a: "Es hilft, die Zunge zu stärken.",
+                    b: "Es ist ein Zeichen von Langeweile.",
+                    c: "Es dient nur der Unterhaltung des Kindes."
+                },
+                correctAnswer: "a",
+                explanation: "Das Saugen, Lutschen und Beißen an Objekten kräftigt die orale Muskulatur, was eine wichtige Grundlage für die spätere Lautbildung und das Essen ist.",
+                wrongExplanation: "Orales Explorieren ist ein wichtiger Entwicklungsschritt zur Stärkung der Muskulatur und zur sensorischen Integration, nicht nur zur Unterhaltung oder aufgrund von Langeweile."
+            },
+            {
+                question: "Was ist der Gag-Reflex und welche Funktion hat er?",
+                answers: {
+                    a: "Ein Reflex, der bei allen neuen Lebensmitteln Erstickung verursacht.",
+                    b: "Ein Schutzmechanismus, um die Atemwege vor Eindringen von Objekten zu schützen.",
+                    c: "Ein Reflex, der anzeigt, dass das Kind die Nahrung nicht mag."
+                },
+                correctAnswer: "b",
+                explanation: "Der Gag-Reflex ist ein normaler, physiologischer Schutzmechanismus. Er ist nicht mit einem Erstickungsereignis zu verwechseln und verringert sich im Laufe der Entwicklung.",
+                wrongExplanation: "Der Gag-Reflex dient als Schutzfunktion und hat nichts damit zu tun, ob ein Kind ein Lebensmittel mag oder nicht. Er ist ein natürlicher Teil der frühkindlichen Entwicklung."
+            },
+            {
+                question: "Welche der folgenden Lebensmittel sollte man einem Baby nicht geben, um Erstickungsgefahr zu vermeiden?",
+                answers: {
+                    a: "Weich gekochte Karottenstücke",
+                    b: "Zerdrückte Banane",
+                    c: "Popcorn"
+                },
+                correctAnswer: "c",
+                explanation: "Popcorn, Nüsse, ganze Weintrauben und harte Rohkost können leicht in die Luftröhre gelangen und eine akute Lebensgefahr darstellen.",
+                wrongExplanation: "Weich gekochte Karottenstücke und zerdrückte Bananen sind altersgerechte Lebensmittel. Popcorn ist hingegen eine akute Erstickungsgefahr."
+            },
+            {
+                question: "Welche Bedeutung hat das orale Explorieren für die Sprachentwicklung?",
+                answers: {
+                    a: "Es hat keine direkte Verbindung zur Sprache.",
+                    b: "Es fördert die Zungenkontrolle und die Lautbildung.",
+                    c: "Es ist nur für das spätere Kauen wichtig."
+                },
+                correctAnswer: "b",
+                explanation: "Die Zungenbewegungen und die sensorische Differenzierung, die beim oralen Explorieren erlernt werden, sind direkte Vorläufer für die Präzision, die bei der Lautbildung erforderlich ist.",
+                wrongExplanation: "Die oralen Bewegungen, die beim Explorieren geübt werden, sind eine direkte Vorbereitung auf die komplexe Zungenkontrolle und Muskulatur, die für die Sprachentwicklung unerlässlich sind."
+            },
+            {
+                question: "Ab wann sollte man sich logopädischen Rat einholen?",
+                answers: {
+                    a: "Wenn das Kind oft sabbert.",
+                    b: "Wenn das orale Explorieren nach dem 9. Lebensmonat ausbleibt.",
+                    c: "Wenn das Kind viel schreit."
+                },
+                correctAnswer: "b",
+                explanation: "Ein Ausbleiben der oralen Exploration oder eine auffällige Texturvermeidung über den 9. Lebensmonat hinaus kann ein Hinweis auf mögliche Schwierigkeiten sein und sollte abgeklärt werden.",
+                wrongExplanation: "Ein ausbleibendes orales Explorieren ist ein sogenanntes 'Red Flag' und sollte logopädisch abgeklärt werden."
+            },
+            {
+                question: "Was ist ein möglicher Nachteil von übermäßigem Daumenlutschen oder Schnullergebrauch?",
+                answers: {
+                    a: "Es macht Kinder weinerlich.",
+                    b: "Es kann zu Malokklusionen (Zahnfehlstellungen) und Artikulationsstörungen führen.",
+                    c: "Es schadet der Zungenkontrolle nicht."
+                },
+                correctAnswer: "b",
+                explanation: "Dauerhafte orale Gewohnheiten können die Kiefer- und Zahnentwicklung beeinträchtigen und negative Auswirkungen auf die Artikulation haben.",
+                wrongExplanation: "Übermäßiger Schnuller- oder Daumengebrauch hat direkte negative Auswirkungen auf die Zahnstellung und kann die Sprachentwicklung negativ beeinflussen."
+            },
+            {
+                question: "Wozu dient der Mund aus psychosozialer Sicht beim Baby?",
+                answers: {
+                    a: "Ausschließlich zum Essen.",
+                    b: "Als bedeutungsvolles Organ für Beruhigung und Selbstregulation.",
+                    c: "Es spielt keine Rolle in der sozialen Entwicklung."
+                },
+                correctAnswer: "b",
+                explanation: "Der Mund ist ein zentrales Instrument zur Selbstregulation und zur frühen Interaktion, zum Beispiel bei der Nachahmung von Mündern oder der gemeinsamen Nahrungsaufnahme.",
+                wrongExplanation: "Der Mund ist ein zentrales Organ für Beruhigung, emotionale Regulation und soziale Interaktion, weit über die reine Nahrungsaufnahme hinaus."
+            },
+            {
+                question: "Was ist bei der Lebensmittelzubereitung für Babys besonders zu beachten?",
+                answers: {
+                    a: "Man sollte feste Nahrung so früh wie möglich geben.",
+                    b: "Man sollte Trauben immer vierteln und Nüsse nur als Mus anbieten.",
+                    c: "Man kann weiche Süßigkeiten bedenkenlos geben."
+                },
+                correctAnswer: "b",
+                explanation: "Das Verringern der Größe und die richtige Konsistenz von Lebensmitteln sind entscheidend, um Erstickungsgefahren zu vermeiden.",
+                wrongExplanation: "Feste Nahrung muss altersgerecht und sicher zubereitet werden. Kleine, runde und harte Lebensmittel sind eine akute Erstickungsgefahr."
+            },
+            {
+                question: "Was ist ein Zeichen für eine gesunde orale Entwicklung im frühen Alter?",
+                answers: {
+                    a: "Nur weiche Nahrung akzeptieren.",
+                    b: "Vielfalt in den oralen Bewegungsmustern (Saugen, Beißen, Kauen).",
+                    c: "Die Ablehnung von allen Spielsachen, die in den Mund genommen werden könnten."
+                },
+                correctAnswer: "b",
+                explanation: "Die Fähigkeit, verschiedene Texturen und Formen zu erkunden und eine Vielfalt von oralen Bewegungen zu zeigen, ist ein Zeichen für eine gesunde orale Entwicklung.",
+                wrongExplanation: "Die Fähigkeit, verschiedene Texturen und Formen zu erkunden, ist ein Zeichen für eine gesunde orale Entwicklung, was die Akzeptanz einer breiten Palette von Lebensmitteln fördert."
+            },
+            {
+                question: "Was ist ein wichtiger Teil der Hygiene in Bezug auf die orale Exploration?",
+                answers: {
+                    a: "Spielzeug muss immer sterilisiert werden.",
+                    b: "Spielzeug sollte nur einmal pro Woche gereinigt werden.",
+                    c: "Regelmäßige Reinigung von mundbaren Spielsachen."
+                },
+                correctAnswer: "c",
+                explanation: "Regelmäßige Reinigung von Gegenständen, die in den Mund genommen werden, ist wichtig, um die Keimbelastung zu reduzieren und das Kind vor Infektionen zu schützen.",
+                wrongExplanation: "Regelmäßige Reinigung von Spielsachen ist entscheidend, um die Hygiene zu gewährleisten. Sterilisation ist in den meisten Fällen nicht notwendig, aber regelmäßige Reinigung ist ein Muss."
+            }
+        ];
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const questionContainer = document.getElementById('question-container');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const submitButton = document.getElementById('submit-quiz-btn');
+        const nextButton = document.getElementById('next-question-btn');
+        const quizEndContainer = document.getElementById('quiz-end');
+        const scoreElement = document.getElementById('score');
+        const rankingElement = document.getElementById('ranking');
+        
+        // Funktion zum Mischen der Fragen
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Funktion zum Anzeigen der aktuellen Frage
+        function showQuestion() {
+            feedbackContainer.innerHTML = '';
+            const questionData = questions[currentQuestionIndex];
+            if (!questionData) {
+                endQuiz();
+                return;
+            }
+
+            const shuffledAnswers = Object.keys(questionData.answers);
+            shuffleArray(shuffledAnswers);
+
+            const answersHtml = shuffledAnswers.map(key => `
+                <div class="mb-2">
+                    <input type="radio" id="q${currentQuestionIndex}-${key}" name="question" value="${key}" class="hidden peer">
+                    <label for="q${currentQuestionIndex}-${key}" class="answer-label block peer-checked:bg-blue-100 peer-checked:border-blue-500">
+                        ${questionData.answers[key]}
+                    </label>
+                </div>
+            `).join('');
+
+            questionContainer.innerHTML = `
+                <div class="font-semibold text-xl mb-4 text-center">
+                    Frage ${currentQuestionIndex + 1} von ${questions.length}
+                </div>
+                <div class="font-bold text-xl mb-4 text-center">
+                    ${questionData.question}
+                </div>
+                <div>${answersHtml}</div>
+            `;
+            submitButton.classList.remove('hidden');
+            nextButton.classList.add('hidden');
+        }
+
+        // Funktion zum Überprüfen der Antwort
+        function checkAnswer() {
+            const selectedAnswer = document.querySelector('input[name="question"]:checked');
+            if (!selectedAnswer) return;
+
+            const userAnswer = selectedAnswer.value;
+            const questionData = questions[currentQuestionIndex];
+
+            submitButton.classList.add('hidden');
+            nextButton.classList.remove('hidden');
+
+            const feedback = document.createElement('div');
+            feedback.classList.add('feedback');
+
+            if (userAnswer === questionData.correctAnswer) {
+                feedback.classList.add('correct');
+                feedback.innerHTML = `<p><strong>Richtig!</strong> ${questionData.explanation}</p>`;
+                score++;
+            } else {
+                feedback.classList.add('incorrect');
+                feedback.innerHTML = `<p><strong>Falsch!</strong> ${questionData.wrongExplanation}</p>`;
+            }
+            feedbackContainer.appendChild(feedback);
+        }
+
+        // Funktion zum Beenden des Quiz und Anzeigen des Ergebnisses
+        function endQuiz() {
+            questionContainer.innerHTML = '';
+            submitButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            feedbackContainer.innerHTML = '';
+            quizEndContainer.classList.add('show');
+            scoreElement.textContent = `Sie haben ${score} von ${questions.length} Fragen richtig beantwortet.`;
+            
+            // Expert:innen-Einstufung
+            let rankingText = '';
+            if (score <= 2) {
+                rankingText = 'Neuling im Dschungel der Oralmotorik';
+            } else if (score <= 5) {
+                rankingText = 'Geschickte:r Mundentdecker:in';
+            } else if (score <= 8) {
+                rankingText = 'Oral-Explorer:in Indiana Jones';
+            } else {
+                rankingText = 'KIolumbus der Oralen Motorik';
+            }
+            rankingElement.textContent = `Ihr Explorer-Status: ${rankingText}`;
+        }
+
+        // Event-Listener für Buttons
+        submitButton.addEventListener('click', checkAnswer);
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            showQuestion();
+        });
+
+        // Quiz starten
+        function startQuiz() {
+            questions = [...allQuestions];
+            shuffleArray(questions);
+            currentQuestionIndex = 0;
+            score = 0;
+            quizEndContainer.classList.remove('show');
+            showQuestion();
+        }
+
+        // Quiz beim Laden der Seite starten
+        startQuiz();
+    });
+</script>
 
 </body>
 </html>
